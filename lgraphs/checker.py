@@ -10,4 +10,9 @@ c.add_arc('b','b','b',')')
 c.add_arc('b','c','c')
 #c.remove_arc('4')
 #c.remove_vertex('b')
-print(c)
+#print(c)
+d = LGraph()
+d.generate_from_grammar(['P->S@','S->aSb|dA','A->dA|e'])
+print(d)
+
+

@@ -9,6 +9,8 @@ class Vertex:
     def __str__(self):
         res = f'In: {self.in_arcs}, out: {self.out_arcs}\n'
         return res
+    def rename(self,name):
+        self.__name = name
     @property
     def name(self):
         return self.__name
