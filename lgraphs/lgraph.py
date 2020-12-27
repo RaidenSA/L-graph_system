@@ -102,7 +102,7 @@ class LGraph:
                         new_vertex=end_vertex
                     elif right_part[position+1]=='|':
                         new_vertex=end_vertex
-                    else: # need to replace concrete brackets with variable
+                    else:
                         new_vertex = f'{left_part}{vertex_counter}'
                         vertex_counter+=1
                     self.add_arc(current_vertex,new_vertex,'',f'){bracket_counter}')
