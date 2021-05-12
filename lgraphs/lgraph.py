@@ -2,17 +2,27 @@ from lgraphs.vertex import Vertex
 from lgraphs.arc import Arc
 import re
 class LGraph:
-    def __init__(self,brackets =[['(',')'],['[',']']]):
+    def __init__(self, brackets=None):
+        if brackets is None:
+            brackets = [['(', ')'], ['[', ']']]
         self.__vertexes = {}
         self.__arcs= {}
         self.__brackets = brackets
-        self.__start_vertexes = {}
-        self.__finish_vertexes = {}
+        #we need to create a scheme of program structure.
+        # we need to have a special form for L-graph core
+        # basing on core, we can check for consistency of l-graph
+        # this is a task of checking for empty language
+        # we may check for determinative l-graph, search for algorithm is needed
+        # we need concatenation
+        # we may also try SAGE
+
+        self.__start_vertexes = []
+        self.__finish_vertexes = []
     def add_arc(self,start_vertex,end_vertex,label='',bracket_trace='',key = None):
         flag = 0 if bracket_trace == '' else 1
         for b in self.__brackets:
             for bb in b:
-                if bb in bracket_trace :
+                if bb in bracket_trace:
                     flag = 0
                     break
         if flag:
@@ -64,21 +74,102 @@ class LGraph:
         res += "\nArcs:\n"
         for a, c in self.__arcs.items():
             res += str(c) + '\n'
+        res += "Start_Vertexes: \n"
+        for b in self.__start_vertexes:
+            res += b + '\n'
+        res += "Finish_Vertexes: \n"
+        for b in self.__finish_vertexes:
+            res += b + '\n'
         return res
     def set_start(self,name):
         if name in self.__vertexes.keys():
-            self.__start_vertexes[name] = 1
+            self.__start_vertexes.append(name)
         else:
             raise NameError(f'No vertex with name "{name}"')
     def set_finish(self,name):
         if name in self.__vertexes.keys():
-            self.__finish_vertexes[name] = 1
+            self.__finish_vertexes.append(name)
         else:
             raise NameError(f'No vertex with name "{name}"')
+
+    def solve(self,in_string):
+        current_vertex_name = self.__start_vertexes[0]
+        #current_vertex = self.__vertexes[current_vertex_name]
+        brackets_path = [[],[]]
+        path = self.solve_one(in_string,current_vertex_name,brackets_path)
+        print(path)
+        if len(path)==0:
+            return False
+        else:
+            return True
+
+    def solve_one(self,in_string,vertex_key,brackets_path):
+        if vertex_key in self.__finish_vertexes and len(in_string)==0 and len(brackets_path[0])==0 and len(brackets_path[1])==0:
+            return [vertex_key]
+        current_vertex = self.__vertexes[vertex_key]
+        path = []
+        for cur in current_vertex.out_arcs:
+            #we check conditions whether an arc is suitable for us
+            flag_to_check = False
+            if len(in_string)==0:
+                if self.__arcs[cur].label == '':
+                    flag_to_check = True
+                    new_string=in_string
+                else:
+                    continue
+            else:
+                if self.__arcs[cur].label == in_string[0] or self.__arcs[cur].label == '':
+                    flag_to_check = True
+                    if self.__arcs[cur].label == in_string[0]:
+                        new_string = in_string[1:]
+                    else:
+                        new_string = in_string
+
+            #we checked all conditions when the ark may be suitable for us to go further.
+            if flag_to_check:
+                new_current_vertex = self.__arcs[cur].end
+
+                    #if bracket is opening we add it
+                if self.__brackets[0][0] in self.__arcs[cur].brackets:
+                    brackets_path[0].append(self.__arcs[cur].brackets)
+                elif self.__brackets[0][1] in self.__arcs[cur].brackets:
+                    if len(brackets_path[0])>0:
+                        if self.__brackets[0][0] in brackets_path[0][len(brackets_path[0])-1]:
+                        #if bracket is closing we try to close it
+                            brackets_path[0].pop()
+                            #check for index will be added later
+                        else:
+                            continue
+                    else:
+                        continue
+
+                #the same for the second type of the brackets
+                if self.__brackets[1][0] in self.__arcs[cur].brackets:
+                    brackets_path[1].append(self.__arcs[cur].brackets)
+                elif self.__brackets[1][1] in self.__arcs[cur].brackets:
+                    if len(brackets_path[1])>0:
+                        if self.__brackets[1][0] in brackets_path[1][len(brackets_path[0])-1]:
+                            brackets_path[1].pop()
+                            #check for index will be added later
+                        else:
+                            continue
+                    else:
+                        continue
+
+
+                new_path = self.solve_one(new_string,new_current_vertex.name,brackets_path)
+                if len(new_path)>0:
+                    path = [vertex_key]
+                    path.extend(new_path)
+                    break
+                #here we combine our path, and if it is not empty, it's good. if it is empty -> no path
+        return path
+
     def generate_from_grammar(self, inGrammar):
         #inGrammar must be a list of string rules. I concider makig a special class for this purposes
         #but it may be so small, that it seems to me that we can handle it right here
         bracket_counter = 1
+        finish_vertex_flag = True
         for inString in inGrammar:
             #inString = "P->S@"
             res = re.search("->",inString)
@@ -89,6 +180,8 @@ class LGraph:
             vertex_counter =1
             current_vertex = f'{left_part}_beg'
             end_vertex = f'{left_part}_end'
+            begin_vertex = current_vertex
+
             for position, symbol in enumerate(right_part):
             #here we need to add an edge, if it is upper - than make 2 separate edjes and go forward
                 if symbol == '|':
@@ -118,7 +211,10 @@ class LGraph:
                         vertex_counter+=1
                     self.add_arc(current_vertex,new_vertex,symbol,'')
                     current_vertex = new_vertex
-
+            if finish_vertex_flag:
+                finish_vertex_flag = False
+                self.set_start(begin_vertex)
+                self.set_finish(end_vertex)
 
             #here i need to parse each grammar rule with regexp, to cath all non terminals from it
 

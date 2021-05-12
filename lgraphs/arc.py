@@ -37,4 +37,8 @@ class Arc:
     def label(self):
         return self.__label
 
+    @property
+    def brackets(self):
+        return self.__brackets
+
 
