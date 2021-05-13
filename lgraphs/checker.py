@@ -36,7 +36,7 @@ constructed.set_start('1')
 constructed.set_finish('2')
 print('Pre-constructed C-f L-graph:')
 print(constructed)
-s='aabbb'
+s='aabb'
 print(s[1:])
 print(s[1:3]) #printed 1 and 2
 print(constructed.solve(s))

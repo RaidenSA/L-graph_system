@@ -6,7 +6,7 @@ import re
 class LGraph:
     def __init__(self, brackets=None):
         if brackets is None:
-            brackets = [['(', ')'], ['[', ']']]
+            brackets = (('(', ')'), ('[', ']'))
         self.__vertexes = {}
         self.__arcs = {}
         self.__brackets = brackets
@@ -293,4 +293,11 @@ class LGraph:
                 self.set_start(begin_vertex)
                 self.set_finish(end_vertex)
 
+    def set_brackets(self, brackets):
+        if isinstance(tuple, brackets):
+            for brace in brackets:
+                if isinstance(tuple, brace):
+                    self.__brackets = brackets
+                    return
+        raise TypeError('Incorrect brackets')
             # here i need to parse each grammar rule with regexp, to cath all non terminals from it
