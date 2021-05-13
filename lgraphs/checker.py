@@ -35,8 +35,38 @@ constructed.add_arc('2','2','b',']')
 constructed.set_start('1')
 constructed.set_finish('2')
 print('Pre-constructed C-f L-graph:')
-print(constructed)
-s='aabb'
-print(s[1:])
-print(s[1:3]) #printed 1 and 2
+#print(constructed)
+s ="ab"
 print(constructed.solve(s))
+
+constructed2 = LGraph()
+constructed2.add_arc('1','1','a','[')
+constructed2.add_arc('1','2','b','(]')
+constructed2.add_arc('2','2','b','(]')
+constructed2.add_arc('2','3','c',')')
+constructed2.add_arc('3','3','c',')')
+constructed2.set_start('1')
+constructed2.set_finish('3')
+print('Pre-constructed C-d L-graph:')
+#print(constructed2)
+s ="abc"
+print(constructed2.solve(s))
+
+multiply6 = LGraph()
+multiply6.add_arc('1','1','I','[1')
+multiply6.add_arc('1','2','x','')
+multiply6.add_arc('2','2','I','[2')
+multiply6.add_arc('2','3','=','')
+multiply6.add_arc('3','4','','(1')
+multiply6.add_arc('4','4','I','(0]2')
+multiply6.add_arc('4','5','',']1')
+multiply6.add_arc('5','5','','[2)0')
+multiply6.add_arc('5','3','',')1')
+multiply6.add_arc('3','6','','')
+multiply6.add_arc('6','6','',']2')
+multiply6.set_start('1')
+multiply6.set_finish('6')
+s='IIxII=IIII'
+print('Strange multiply:')
+print(multiply6.solve(s))
+

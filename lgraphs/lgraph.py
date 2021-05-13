@@ -1,6 +1,7 @@
 from lgraphs.vertex import Vertex
 from lgraphs.arc import Arc
 import re
+import copy
 
 
 class LGraph:
@@ -100,6 +101,18 @@ class LGraph:
         else:
             raise NameError(f'No vertex with name "{name}"')
 
+    def remove_start(self, name):
+        if name in self.__start_vertexes:
+            self.__start_vertexes.remove(name)
+        else:
+            raise NameError(f'No start vertex with name "{name}"')
+
+    def remove_finish(self, name):
+        if name in self.__finish_vertexes:
+            self.__finish_vertexes.remove(name)
+        else:
+            raise NameError(f'No finish vertex with name "{name}"')
+
     def solve(self, in_string, arc_trace=False, vertex_trace=False):
         current_vertex_name = self.__start_vertexes[0]
         # current_vertex = self.__vertexes[current_vertex_name]
@@ -114,8 +127,8 @@ class LGraph:
         else:
             return True
 
-    def solve_one(self, in_string, vertex_key, brackets_path):
-        if vertex_key in self.__finish_vertexes and len(in_string) == 0 and len(brackets_path[0]) == 0 and len(brackets_path[1]) == 0:
+    def solve_one(self, in_string, vertex_key, old_brackets_path):
+        if vertex_key in self.__finish_vertexes and len(in_string) == 0 and len(old_brackets_path[0]) == 0 and len(old_brackets_path[1]) == 0:
             return [vertex_key], []
         # brackets_path[0] for first type of brackets
         # brackets_path[1] for the second
@@ -125,6 +138,9 @@ class LGraph:
         for cur in current_vertex.out_arcs:
             # we check conditions whether an arc is suitable for us
             flag_to_check = False
+
+            brackets_path = copy.deepcopy(old_brackets_path)
+            # copy is needed to copy nested list correctly
             new_string = ""
             if len(in_string) == 0:
                 if self.__arcs[cur].label == '':
@@ -142,41 +158,96 @@ class LGraph:
             # we checked all conditions when the ark may be suitable for us to go further.
             if flag_to_check:
                 new_current_vertex = self.__arcs[cur].end
+                current_brackets = self.__arcs[cur].brackets
+                first_brackets = ''
+                second_brackets = ''
+                if len(current_brackets) > 0:
+                    # first open brackets
+                    res = current_brackets.find(self.__brackets[0][0])
+                    if res != -1:
+                        if len(current_brackets) > res:
+                            if current_brackets[res+1:res+2].isnumeric():
+                                first_brackets = current_brackets[res:res+2]
+                            else:
+                                first_brackets = current_brackets[res]
+                        else:
+                            first_brackets = current_brackets[res]
+                    elif current_brackets.find(self.__brackets[0][1]) != -1:
+                        # first close brackets
+                        res = current_brackets.find(self.__brackets[0][1])
+                        if res != -1:
+                            if len(current_brackets) > res:
+                                if current_brackets[res + 1:res + 2].isnumeric():
+                                    first_brackets = current_brackets[res:res + 2]
+                                else:
+                                    first_brackets = current_brackets[res]
+                            else:
+                                first_brackets = current_brackets[res]
+                    else:
+                        first_brackets = ''
+                    # second open brackets
+                    res = current_brackets.find(self.__brackets[1][0])
+                    if res != -1:
+                        if len(current_brackets) > res:
+                            if current_brackets[res + 1:res + 2].isnumeric():
+                                second_brackets = current_brackets[res:res + 2]
+                            else:
+                                second_brackets = current_brackets[res]
+                        else:
+                            second_brackets = current_brackets[res]
+                    elif current_brackets.find(self.__brackets[1][1]) != -1:
+                        # second close brackets
+                        res = current_brackets.find(self.__brackets[1][1])
+                        if res != -1:
+                            if len(current_brackets) > res:
+                                if current_brackets[res + 1:res + 2].isnumeric():
+                                    second_brackets = current_brackets[res:res + 2]
+                                else:
+                                    second_brackets = current_brackets[res]
+                            else:
+                                second_brackets = current_brackets[res]
+                    else:
+                        second_brackets = ''
+                    # The following parts helps track the resolving process
+                    # print()
+                    # print(cur)
+                    # print(current_brackets)
+                    # print(brackets_path)
+                    # print('first brackets: ', first_brackets)
+                    # print('second brackets: ', second_brackets)
+
                 # if bracket is opening we add it
-                #should revise the whole bracket check
-                if self.__brackets[0][0] in self.__arcs[cur].brackets:
-                    brackets_path[0].append(self.__arcs[cur].brackets)
-                    #need to revise with regexp or without it, but need a check on index and multiple
-                elif self.__brackets[0][1] in self.__arcs[cur].brackets:
+                # should revise the whole bracket check
+                if self.__brackets[0][0] in first_brackets:
+                    brackets_path[0].append(first_brackets)
+
+                elif self.__brackets[0][1] in first_brackets:
                     if len(brackets_path[0]) > 0:
                         if self.__brackets[0][0] in brackets_path[0][len(brackets_path[0])-1]:
-                            #brackets_path[0][len(brackets_path[0])-1] means the last added bracket
+                            # brackets_path[0][len(brackets_path[0])-1] means the last added bracket
                             # if bracket is closing we try to close it
-                            if brackets_path[0][len(brackets_path[0])-1][1:] == self.__arcs[cur].brackets[1:]:
+                            if brackets_path[0][len(brackets_path[0])-1][1:] == first_brackets[1:]:
                                 brackets_path[0].pop()
                                 # some kind of index check
-                                # [1:] needs strict revision with regexp
                             else:
                                 continue
-                            # check for index will be added later
+                            # check for index is made after brackets are categorised
                         else:
                             continue
                     else:
                         continue
                 # print(cur)
                 # the same for the second type of the brackets
-                if self.__brackets[1][0] in self.__arcs[cur].brackets:
-                    brackets_path[1].append(self.__arcs[cur].brackets)
-                elif self.__brackets[1][1] in self.__arcs[cur].brackets:
+                if self.__brackets[1][0] in second_brackets:
+                    brackets_path[1].append(second_brackets)
+                elif self.__brackets[1][1] in second_brackets:
                     if len(brackets_path[1]) > 0:
-                        if self.__brackets[1][0] in brackets_path[1][len(brackets_path[0])-1]:
-                            if brackets_path[1][len(brackets_path[1]) - 1][1:] == self.__arcs[cur].brackets[1:]:
+                        if self.__brackets[1][0] in brackets_path[1][len(brackets_path[1])-1]:
+                            if brackets_path[1][len(brackets_path[1]) - 1][1:] == second_brackets[1:]:
                                 brackets_path[1].pop()
                                 # some kind of index check
-                                # [1:] needs strict revision with regexp
                             else:
                                 continue
-                            # check for index will be added later
                         else:
                             continue
                     else:
@@ -300,4 +371,3 @@ class LGraph:
                     self.__brackets = brackets
                     return
         raise TypeError('Incorrect brackets')
-            # here i need to parse each grammar rule with regexp, to cath all non terminals from it
