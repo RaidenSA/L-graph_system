@@ -74,4 +74,4 @@ s='IIxII=IIII'
 #print(multiply6.solve(s))
 #print(['1'] in [['1'],['2']])
 print(multiply6.cycles())
-print(multiply6.core(1,0))
+print(multiply6.core(0,1))

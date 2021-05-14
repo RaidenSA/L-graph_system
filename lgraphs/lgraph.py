@@ -16,7 +16,6 @@ class LGraph:
         # basing on core, we can check for consistency of l-graph
         # this is a task of checking for empty language
         # we may check for determinative l-graph, search for algorithm is needed
-        # we need concatenation
         # we may also try SAGE
 
         self.__start_vertexes = []
@@ -526,3 +525,23 @@ class LGraph:
                     else:
                         path.extend(new_path)
         return path
+
+    @property
+    def vertexes(self):
+        return self.__vertexes
+
+    @property
+    def arcs(self):
+        return self.__arcs
+
+    @property
+    def brackets(self):
+        return self.__brackets
+
+    @property
+    def start_vertexes(self):
+        return self.__start_vertexes
+
+    @property
+    def finish_vertexes(self):
+        return self.__finish_vertexes
