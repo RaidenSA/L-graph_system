@@ -29,6 +29,12 @@ class Arc:
         self.__start_vertex.out_arcs.discard(self.__key)
         self.__end_vertex.in_arcs.discard(self.__key)
 
+    def set_label(self,new_label):
+        self.__label=new_label
+
+    def set_brackets(self,new_brackets):
+        self.__brackets=new_brackets
+
     @property
     def start(self):
         return self.__start_vertex
@@ -44,3 +50,7 @@ class Arc:
     @property
     def brackets(self):
         return self.__brackets
+
+    @property
+    def key(self):
+        return self.__key
