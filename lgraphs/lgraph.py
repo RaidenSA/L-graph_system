@@ -117,7 +117,7 @@ class LGraph:
         current_vertex_name = self.__start_vertexes[0]
         # current_vertex = self.__vertexes[current_vertex_name]
         brackets_path = [[], []]
-        path, arc_path = self.solve_one(in_string, current_vertex_name, brackets_path)
+        path, arc_path = self.__solve_one(in_string, current_vertex_name, brackets_path)
         if arc_trace:
             return path
         if vertex_trace:
@@ -127,7 +127,7 @@ class LGraph:
         else:
             return True
 
-    def solve_one(self, in_string, vertex_key, old_brackets_path):
+    def __solve_one(self, in_string, vertex_key, old_brackets_path):
         if vertex_key in self.__finish_vertexes and len(in_string) == 0 and len(old_brackets_path[0]) == 0 and len(old_brackets_path[1]) == 0:
             return [vertex_key], []
         # brackets_path[0] for first type of brackets
@@ -252,7 +252,7 @@ class LGraph:
                             continue
                     else:
                         continue
-                new_path, new_arc_trace = self.solve_one(new_string, new_current_vertex.name, brackets_path)
+                new_path, new_arc_trace = self.__solve_one(new_string, new_current_vertex.name, brackets_path)
                 # print(new_path)
                 if len(new_path) > 0:
                     path = [vertex_key]
@@ -264,21 +264,21 @@ class LGraph:
         return path, arc_trace
 
     def cycles(self):  # cycles without duplicates
-        cycle_res = self.cycle_detection()
+        cycle_res = self.__cycle_detection()
         res = [list(i) for i in {*[tuple(sorted(i)) for i in cycle_res]}]
         return res
 
-    def cycle_detection(self):  # all cycles
+    def __cycle_detection(self):  # all cycles
         cycles = []
         for cur in self.__vertexes.keys():
             path = []
-            self.cycle_depth_search(cur, [], path)
+            self.__cycle_depth_search(cur, [], path)
             if len(path) > 0:
                 cycles.extend(path)
         res = cycles
         return res
 
-    def cycle_depth_search(self, vertex_name, path, accumulator):
+    def __cycle_depth_search(self, vertex_name, path, accumulator):
         current_vertex = self.__vertexes[vertex_name]
         new_path = path.copy()
         if len(path) > 0:
@@ -288,13 +288,13 @@ class LGraph:
             return []
         new_path.append(vertex_name)
         for cur in current_vertex.out_arcs:
-            only_new_path = self.cycle_depth_search(self.__arcs[cur].end.name, new_path, accumulator)
+            only_new_path = self.__cycle_depth_search(self.__arcs[cur].end.name, new_path, accumulator)
             if len(only_new_path) > 0:
                 accumulator.append(only_new_path)
         return []
 
-    def arc_cycle_detection(self):  # returns list of all lists of cycling arcs
-        cycles = self.cycle_detection()
+    def __arc_cycle_detection(self):  # returns list of all lists of cycling arcs
+        cycles = self.__cycle_detection()
         arc_cy = []
         for cy in cycles:
             cur_cycle = []
@@ -309,7 +309,7 @@ class LGraph:
         return arc_cy
 
     def arc_cycles(self):
-        cycle = self.arc_cycle_detection()
+        cycle = self.__arc_cycle_detection()
         res = [list(i) for i in {*[tuple(sorted(i)) for i in cycle]}]
         return res
 
@@ -371,3 +371,158 @@ class LGraph:
                     self.__brackets = brackets
                     return
         raise TypeError('Incorrect brackets')
+
+    def core(self, paired, neutral):
+        cycles = self.arc_cycles()
+        # define cycle type
+        paired_cycles = set()
+        neutral_cycles = set()
+        for cycle in cycles:
+            flag = 1
+            for cur_arc in cycle:
+                if self.__arcs[cur_arc].brackets != '':
+                    for item in cycle:
+                        paired_cycles.add(item)
+                    flag = 0
+                    break
+            if flag:
+                for item in cycle:
+                    neutral_cycles.add(item)
+
+        neutral_arcs = dict.fromkeys(neutral_cycles, neutral)
+        paired_arcs = dict.fromkeys(paired_cycles, paired)
+        begin_vertex = self.__start_vertexes[0]
+        path = self.__core_depth(begin_vertex, paired_arcs, neutral_arcs, [[], []], [])
+        return path
+
+    def __core_depth(self, vertex_key, paired, neutral, old_brackets_path, path_res):
+        if vertex_key in self.__finish_vertexes and len(old_brackets_path[0]) == 0 and len(old_brackets_path[1]) == 0:
+            new_path_res = copy.deepcopy(path_res)
+            new_path_res.append(vertex_key)
+            return new_path_res
+        current_vertex = self.__vertexes[vertex_key]
+        path = []
+        for cur in current_vertex.out_arcs:
+            # we check conditions whether an arc is suitable for us
+            new_path_res = copy.deepcopy(path_res)
+            flag_to_check = False
+            brackets_path = copy.deepcopy(old_brackets_path)
+            new_neutral = copy.copy(neutral)
+            new_paired = copy.copy(paired)
+            if cur in new_neutral.keys():
+                if new_neutral[cur] > 0:
+                    flag_to_check = True
+                    new_neutral[cur] -= 1
+            elif cur in new_paired.keys():
+                if new_paired[cur] > 0:
+                    flag_to_check = True
+                    new_paired[cur] -= 1
+            else:
+                flag_to_check = True
+            # copy is needed to copy nested list correctly
+            # we checked all conditions when the ark may be suitable for us to go further.
+            if flag_to_check:
+                new_current_vertex = self.__arcs[cur].end
+                current_brackets = self.__arcs[cur].brackets
+                first_brackets = ''
+                second_brackets = ''
+                if len(current_brackets) > 0:
+                    # first open brackets
+                    res = current_brackets.find(self.__brackets[0][0])
+                    if res != -1:
+                        if len(current_brackets) > res:
+                            if current_brackets[res + 1:res + 2].isnumeric():
+                                first_brackets = current_brackets[res:res + 2]
+                            else:
+                                first_brackets = current_brackets[res]
+                        else:
+                            first_brackets = current_brackets[res]
+                    elif current_brackets.find(self.__brackets[0][1]) != -1:
+                        # first close brackets
+                        res = current_brackets.find(self.__brackets[0][1])
+                        if res != -1:
+                            if len(current_brackets) > res:
+                                if current_brackets[res + 1:res + 2].isnumeric():
+                                    first_brackets = current_brackets[res:res + 2]
+                                else:
+                                    first_brackets = current_brackets[res]
+                            else:
+                                first_brackets = current_brackets[res]
+                    else:
+                        first_brackets = ''
+                    # second open brackets
+                    res = current_brackets.find(self.__brackets[1][0])
+                    if res != -1:
+                        if len(current_brackets) > res:
+                            if current_brackets[res + 1:res + 2].isnumeric():
+                                second_brackets = current_brackets[res:res + 2]
+                            else:
+                                second_brackets = current_brackets[res]
+                        else:
+                            second_brackets = current_brackets[res]
+                    elif current_brackets.find(self.__brackets[1][1]) != -1:
+                        # second close brackets
+                        res = current_brackets.find(self.__brackets[1][1])
+                        if res != -1:
+                            if len(current_brackets) > res:
+                                if current_brackets[res + 1:res + 2].isnumeric():
+                                    second_brackets = current_brackets[res:res + 2]
+                                else:
+                                    second_brackets = current_brackets[res]
+                            else:
+                                second_brackets = current_brackets[res]
+                    else:
+                        second_brackets = ''
+                if self.__brackets[0][0] in first_brackets:
+                    brackets_path[0].append(first_brackets)
+
+                elif self.__brackets[0][1] in first_brackets:
+                    if len(brackets_path[0]) > 0:
+                        if self.__brackets[0][0] in brackets_path[0][len(brackets_path[0]) - 1]:
+                            # brackets_path[0][len(brackets_path[0])-1] means the last added bracket
+                            # if bracket is closing we try to close it
+                            if brackets_path[0][len(brackets_path[0]) - 1][1:] == first_brackets[1:]:
+                                brackets_path[0].pop()
+                                # some kind of index check
+                            else:
+                                continue
+                            # check for index is made after brackets are categorised
+                        else:
+                            continue
+                    else:
+                        continue
+                # the same for the second type of the brackets
+                if self.__brackets[1][0] in second_brackets:
+                    brackets_path[1].append(second_brackets)
+                elif self.__brackets[1][1] in second_brackets:
+                    if len(brackets_path[1]) > 0:
+                        if self.__brackets[1][0] in brackets_path[1][len(brackets_path[1]) - 1]:
+                            if brackets_path[1][len(brackets_path[1]) - 1][1:] == second_brackets[1:]:
+                                brackets_path[1].pop()
+                                # some kind of index check
+                            else:
+                                continue
+                        else:
+                            continue
+                    else:
+                        continue
+
+                new_path_res.append(vertex_key)
+                new_path = self.__core_depth(new_current_vertex.name, new_paired, new_neutral, brackets_path, new_path_res)
+                # trying to get consistent flat list regardless of recursion direction
+                if len(new_path) > 0:
+                    if len(path) > 0:
+                        if isinstance(path[0], list):
+                            path.append(new_path)
+                        else:
+                            if isinstance(new_path[0], list):
+                                path_x = path
+                                path = new_path
+                                path.append(path_x)
+                            else:
+                                path_x = [path]
+                                path = path_x
+                                path.append(new_path)
+                    else:
+                        path.extend(new_path)
+        return path
