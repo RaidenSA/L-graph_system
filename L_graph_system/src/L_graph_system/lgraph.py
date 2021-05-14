@@ -3,6 +3,18 @@ from .vertex import Vertex
 from .arc import Arc
 import re
 import copy
+import pickle
+
+
+def load_graph(filename):
+    with open(filename, 'rb') as input_f:  # Overwrites any existing file.
+        res = pickle.load(input_f)
+        return res
+
+
+def save_graph(graph, filename):
+    with open(filename, 'wb') as output:
+        pickle.dump(graph, output, pickle.HIGHEST_PROTOCOL)
 
 
 class LGraph:
@@ -45,6 +57,7 @@ class LGraph:
             self.__vertexes[start_vertex].out_arcs.add(key)
         else:
             self.__vertexes[start_vertex] = Vertex(start_vertex)
+            # if it is not defined, it will be new unused vertex.
             self.__vertexes[start_vertex].out_arcs.add(key)
         if end_vertex in self.__vertexes.keys():
             self.__vertexes[end_vertex].in_arcs.add(key)
@@ -61,7 +74,11 @@ class LGraph:
             else:
                 new_name = name
         else:
-            new_name = f'{len(self.__vertexes) + 1}'
+            i = 1
+            new_name = f'{i}'
+            while new_name in self.__vertexes.keys():
+                i += 1
+                new_name = f'{i}'
         self.__vertexes[new_name] = Vertex(new_name)
 
     def remove_arc(self, key):
@@ -303,12 +320,9 @@ class LGraph:
         for cy in cycles:
             cur_cycle = []
             for ind in range(len(cy)):
-                # print(self.__vertexes[cy[ind]].in_arcs)
                 new_arc = self.__vertexes[cy[ind]].in_arcs.intersection(self.__vertexes[cy[ind-1]].out_arcs)
-                # print(new_arc)
                 for ar in new_arc:
                     cur_cycle.append(ar)
-                # print(cur_cycle)
             arc_cy.append(cur_cycle)
         return arc_cy
 
@@ -376,6 +390,43 @@ class LGraph:
                     return
         raise TypeError('Incorrect brackets')
 
+    def type_def(self):
+        brackets_path = set()
+        for cur_arc_name in self.__arcs.keys():
+            cur_arc = self.__arcs[cur_arc_name]
+            brackets_path.add(cur_arc.brackets)
+        if len(brackets_path) == 0:
+            return 'regular'
+        else:
+            flag_first = 0
+            flag_second = 0
+            for s in brackets_path:
+                for sym in s:
+                    if sym in self.__brackets[0]:
+                        flag_first = 1
+                    if sym in self.__brackets[1]:
+                        flag_second = 1
+        if flag_second != flag_first:
+            return 'context_free'
+        elif flag_first and flag_second:
+            return 'recursively_enumerable'
+        else:
+            return 'error'
+
+    def is_regular(self):
+        g_type = self.type_def()
+        if g_type == 'regular':
+            return True
+        else:
+            return False
+
+    def is_context_free(self):
+        g_type = self.type_def()
+        if g_type == 'regular' or g_type == 'context_free':
+            return True
+        else:
+            return False
+
     def core(self, paired, neutral):
         cycles = self.arc_cycles()
         # define cycle type
@@ -398,6 +449,46 @@ class LGraph:
         begin_vertex = self.__start_vertexes[0]
         path = self.__core_depth(begin_vertex, paired_arcs, neutral_arcs, [[], []], [])
         return path
+
+    def merge(self, another_graph):
+        return
+
+    def dead_ends(self):
+        res = set()
+        for vertex_name in self.__vertexes.keys():
+            if not(self.__finish_vertexes[0]) in self.__next_vertexes(vertex_name, set()):
+                res.add(vertex_name)
+        return res
+
+    def unattainable(self):
+        res = set()
+        for vertex_name in self.__vertexes.keys():
+            if not(vertex_name in self.__next_vertexes(self.__start_vertexes[0], set())):
+                res.add(vertex_name)
+        return res
+
+    def remove_unusable(self):
+        d = self.dead_ends()
+        u = self.unattainable()
+        d.update(u)
+        for vertex_name in d:
+            if vertex_name in self.__vertexes.keys():
+                self.remove_vertex(vertex_name)
+
+    def __next_vertexes(self, vertex_name, path):
+        cur_vertex = self.__vertexes[vertex_name]
+        next_vertexes = set()
+        for new_arc in cur_vertex.out_arcs:
+            if self.__arcs[new_arc].end.name in next_vertexes:
+                continue
+            if self.__arcs[new_arc].end.name in path:
+                continue
+            next_vertexes.add(self.__arcs[new_arc].end.name)
+            path.add(self.__arcs[new_arc].end.name)
+            new_next_vertexes = self.__next_vertexes(self.__arcs[new_arc].end.name, path)
+            for x in new_next_vertexes:
+                next_vertexes.add(x)
+        return next_vertexes
 
     def __core_depth(self, vertex_key, paired, neutral, old_brackets_path, path_res):
         if vertex_key in self.__finish_vertexes and len(old_brackets_path[0]) == 0 and len(old_brackets_path[1]) == 0:
@@ -569,7 +660,6 @@ class LGraph:
                             beginning = self.__arcs[a_in].start.name
                 if flag:
                     self.add_arc(beginning, destination, new_label, new_brackets)
-                    print(cur_vertex)
                     self.remove_vertex(cur_vertex)
 
     @property
