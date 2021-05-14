@@ -1,4 +1,4 @@
-from lgraphs.vertex import Vertex
+from .vertex import Vertex
 
 
 class Arc:
@@ -21,7 +21,7 @@ class Arc:
                 )
 
     def __str__(self):
-        res = f'From {self.__start_vertex.name} to {self.__end_vertex.name}, with {self.__label},{self.__brackets}'
+        res = f'{self.__key} From {self.__start_vertex.name} to {self.__end_vertex.name}, with {self.__label},{self.__brackets}'
         res += f' next arcs: {self.__next_arcs}'
         return res
 

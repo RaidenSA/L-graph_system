@@ -1,4 +1,5 @@
 from lgraph import LGraph
+import unittest
 
 
 c = LGraph()
@@ -73,5 +74,19 @@ s='IIxII=IIII'
 #print('Strange multiply:')
 #print(multiply6.solve(s))
 #print(['1'] in [['1'],['2']])
-print(multiply6.cycles())
-print(multiply6.core(0,1))
+#print(multiply6.cycles())
+#print(multiply6.core(0,1))
+
+for_reduction = LGraph()
+for_reduction.add_arc('0','1','a','')
+#for_reduction.add_arc('1','1','a','')
+for_reduction.add_arc('1','2','',')')
+#print(for_reduction)
+#for_reduction.reduction()
+#print(for_reduction)
+
+f = LGraph()
+f.generate_from_grammar(['S->Ab', 'A->aA|e'])
+print(f)
+f.reduction()
+print(f)

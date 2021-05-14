@@ -1,5 +1,6 @@
-from lgraphs.vertex import Vertex
-from lgraphs.arc import Arc
+from .vertex import Vertex
+
+from .arc import Arc
 import re
 import copy
 
@@ -31,10 +32,15 @@ class LGraph:
         if flag:
             raise NameError('Incorrect brackets')
         if key:
-            if key in self.__arcs:
+            if key in self.__arcs.keys():
                 raise NameError(f'Arc with key "{key}" already exists')
         else:
-            key = f'{len(self.__arcs) + 1}'  # need some ajustments here, cause 2 then none will make an error
+            i = 1
+            key = f'{i}'
+            while key in self.__arcs.keys():
+                i += 1
+                key = f'{i}'
+        # if the key is generated, we get the first non-occupied key
         if start_vertex in self.__vertexes.keys():
             self.__vertexes[start_vertex].out_arcs.add(key)
         else:
@@ -137,7 +143,6 @@ class LGraph:
         for cur in current_vertex.out_arcs:
             # we check conditions whether an arc is suitable for us
             flag_to_check = False
-
             brackets_path = copy.deepcopy(old_brackets_path)
             # copy is needed to copy nested list correctly
             new_string = ""
@@ -525,6 +530,47 @@ class LGraph:
                     else:
                         path.extend(new_path)
         return path
+
+    def reduction(self):
+        old_vertexes = [x for x in self.__vertexes.keys()]
+        for cur_vertex in old_vertexes:
+            if not(cur_vertex in self.__vertexes.keys()):
+                continue
+            cur = self.__vertexes[cur_vertex]
+            print(cur_vertex)
+            out_arcs = cur.out_arcs
+            in_arcs = cur.in_arcs
+            beginning, destination, new_label, new_brackets = '', '', '', ''
+            flag = 1
+            if len(in_arcs) == 1 and len(out_arcs) == 1:
+                print(cur_vertex, in_arcs, out_arcs)
+                for a_in in in_arcs:
+                    for a_out in out_arcs:
+                        if self.__arcs[a_in].label == '':
+                            if self.__arcs[a_in].brackets == '':
+                                new_brackets = self.__arcs[a_out].brackets
+                            elif self.__arcs[a_out].brackets == '':
+                                new_brackets = self.__arcs[a_in].brackets
+                            else:
+                                flag = 0
+                            new_label = self.__arcs[a_out].label
+                        elif self.__arcs[a_out].label == '':
+                            if self.__arcs[a_in].brackets == '':
+                                new_brackets = self.__arcs[a_out].brackets
+                            elif self.__arcs[a_out].brackets == '':
+                                new_brackets = self.__arcs[a_in].brackets
+                            else:
+                                flag = 0
+                            new_label = self.__arcs[a_in].label
+                        else:
+                            flag = 0
+                        if flag:
+                            destination = self.__arcs[a_out].end.name
+                            beginning = self.__arcs[a_in].start.name
+                if flag:
+                    self.add_arc(beginning, destination, new_label, new_brackets)
+                    print(cur_vertex)
+                    self.remove_vertex(cur_vertex)
 
     @property
     def vertexes(self):
