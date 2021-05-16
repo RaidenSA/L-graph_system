@@ -141,9 +141,9 @@ class LGraph:
         brackets_path = [[], []]
         path, arc_path = self.__solve_one(in_string, current_vertex_name, brackets_path)
         if arc_trace:
-            return path
-        if vertex_trace:
             return arc_path
+        if vertex_trace:
+            return path
         if len(path) == 0:
             return False
         else:

@@ -124,6 +124,8 @@ ___start:Vertex___
 
 ___end:Vertex___
 
+___next_arcs:set(String)___
+
 ### Methods:
 
 ___remove_arc()___

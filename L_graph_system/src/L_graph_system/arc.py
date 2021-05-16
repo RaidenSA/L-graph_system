@@ -54,3 +54,7 @@ class Arc:
     @property
     def key(self):
         return self.__key
+
+    @property
+    def next_arcs(self):
+        return self.__next_arcs
